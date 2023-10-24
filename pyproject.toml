@@ -5,7 +5,9 @@ version = "0.1.0"
 authors = [
     { name = "Alvin Shen", email = "29553973+asian-dev@users.noreply.github.com" },
 ]
-dependencies = []
+dependencies = [
+    "torch>=2.1.0",
+]
 requires-python = ">=3.10"
 
 [tool.pdm.dev-dependencies]
