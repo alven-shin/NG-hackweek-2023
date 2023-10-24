@@ -16,7 +16,7 @@
           inherit system;
         };
 
-        sharedDependencies = with pkgs; [python3 pdm];
+        sharedDependencies = with pkgs; [python311 pdm];
         linuxDependencies = with pkgs; [];
         macosDependencies = with pkgs; [];
         macosFrameworks = with pkgs.darwin.apple_sdk.frameworks; [];
