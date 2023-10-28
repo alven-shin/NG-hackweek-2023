@@ -1,9 +1,13 @@
 # %%
+import transformers
+
 SEED = 69420
 DO_TRAINING = True
 EPOCHS_TO_TRAIN = 5
 BASE_MODEL = "google/vit-base-patch16-224"
 OUTPUT_MODEL_DIR = "./vit-base-pcb"
+IMAGE_PROCESSOR_CLASS = transformers.ViTImageProcessor
+IMAGE_CLASSIFICATION_CLASS = transformers.ViTForImageClassification
 
 # %%
 from datasets import load_dataset
@@ -25,10 +29,12 @@ dataset = DatasetDict(
 dataset
 
 # %%
-from transformers import ViTImageProcessor
+try:
+    model_name = BASE_MODEL if DO_TRAINING else OUTPUT_MODEL_DIR
+except OSError:
+    model_name = BASE_MODEL
 
-model_name = BASE_MODEL if DO_TRAINING else OUTPUT_MODEL_DIR
-processor = ViTImageProcessor.from_pretrained(model_name)
+processor = IMAGE_PROCESSOR_CLASS.from_pretrained(model_name)
 # processor(dataset["train"][-1]["image"], return_tensors="pt")
 
 
@@ -70,11 +76,9 @@ def compute_metrics(p):
 
 
 # %%
-from transformers import ViTForImageClassification
-
 labels = dataset["train"].features["label"].names
 
-model = ViTForImageClassification.from_pretrained(
+model = IMAGE_CLASSIFICATION_CLASS.from_pretrained(
     model_name,
     num_labels=len(labels),
     id2label={str(i): c for i, c in enumerate(labels)},
@@ -128,16 +132,15 @@ if DO_TRAINING:
     trainer.save_state()
 
 # %%
-metrics = trainer.evaluate(prepared_ds["test"])
-trainer.log_metrics("eval", metrics)
-trainer.save_metrics("eval", metrics)
+if DO_TRAINING or True:
+    metrics = trainer.evaluate(prepared_ds["test"])
+    trainer.log_metrics("eval", metrics)
+    trainer.save_metrics("eval", metrics)
 
 # %%
-from transformers import ViTImageProcessor, ViTForImageClassification
+processor = IMAGE_PROCESSOR_CLASS.from_pretrained(OUTPUT_MODEL_DIR)
 
-processor = ViTImageProcessor.from_pretrained(OUTPUT_MODEL_DIR)
-
-model = ViTForImageClassification.from_pretrained(
+model = IMAGE_CLASSIFICATION_CLASS.from_pretrained(
     OUTPUT_MODEL_DIR,
     num_labels=len(labels),
     id2label={str(i): c for i, c in enumerate(labels)},
