@@ -3,26 +3,27 @@ import transformers
 
 SEED = 69420
 DO_TRAINING = True
-EPOCHS_TO_TRAIN = 5
-BASE_MODEL = "google/vit-base-patch16-224"
-OUTPUT_MODEL_DIR = "./vit-base-pcb"
-IMAGE_PROCESSOR_CLASS = transformers.ViTImageProcessor
-IMAGE_CLASSIFICATION_CLASS = transformers.ViTForImageClassification
+EPOCHS_TO_TRAIN = 10
+BASE_MODEL = "microsoft/resnet-50"
+OUTPUT_MODEL_DIR = "./models/resnet-pcb/"
+IMAGE_PROCESSOR_CLASS = transformers.AutoImageProcessor
+IMAGE_CLASSIFICATION_CLASS = transformers.ResNetForImageClassification
 
 # %%
 from datasets import load_dataset
 from datasets import DatasetDict
 
-ds = load_dataset("./dataset")
+ds = load_dataset("./datasets/training/")
+testing_set = load_dataset("./datasets/testing/")
 
-ds_train_devtest = ds["train"].train_test_split(test_size=0.3, seed=SEED)
-ds_devtest = ds_train_devtest["test"].train_test_split(test_size=0.5, seed=SEED)
+ds_train_devtest = ds["train"].train_test_split(test_size=0.2, seed=SEED)
 
 dataset = DatasetDict(
     {
         "train": ds_train_devtest["train"],
-        "eval": ds_devtest["train"],
-        "test": ds_devtest["test"],
+        "eval": ds_train_devtest["test"],
+        # 'test': ds_devtest['test']
+        "test": testing_set["train"],
     }
 )
 
@@ -132,10 +133,9 @@ if DO_TRAINING:
     trainer.save_state()
 
 # %%
-if DO_TRAINING or True:
-    metrics = trainer.evaluate(prepared_ds["test"])
-    trainer.log_metrics("eval", metrics)
-    trainer.save_metrics("eval", metrics)
+metrics = trainer.evaluate(prepared_ds["test"])
+trainer.log_metrics("eval", metrics)
+trainer.save_metrics("eval", metrics)
 
 # %%
 processor = IMAGE_PROCESSOR_CLASS.from_pretrained(OUTPUT_MODEL_DIR)
