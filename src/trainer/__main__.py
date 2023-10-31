@@ -3,18 +3,19 @@ import transformers
 
 SEED = 69420
 DO_TRAINING = True
-EPOCHS_TO_TRAIN = 10
+EPOCHS_TO_TRAIN = 100
 BASE_MODEL = "microsoft/resnet-50"
-OUTPUT_MODEL_DIR = "./models/resnet-pcb/"
+OUTPUT_MODEL_DIR = "./models/resnet-pcb-ext/"
 IMAGE_PROCESSOR_CLASS = transformers.AutoImageProcessor
 IMAGE_CLASSIFICATION_CLASS = transformers.ResNetForImageClassification
+
 
 # %%
 from datasets import load_dataset
 from datasets import DatasetDict
 
 ds = load_dataset("./datasets/training/")
-testing_set = load_dataset("./datasets/testing/")
+# testing_set = load_dataset("./datasets/testing/")
 
 ds_train_devtest = ds["train"].train_test_split(test_size=0.2, seed=SEED)
 
@@ -23,11 +24,12 @@ dataset = DatasetDict(
         "train": ds_train_devtest["train"],
         "eval": ds_train_devtest["test"],
         # 'test': ds_devtest['test']
-        "test": testing_set["train"],
+        # 'test': testing_set["train"]
     }
 )
 
 dataset
+
 
 # %%
 try:
@@ -51,6 +53,7 @@ def transform(batch):
 
 prepared_ds = dataset.with_transform(transform)
 # prepared_ds["eval"][0]
+
 
 # %%
 import torch
@@ -108,6 +111,7 @@ training_args = TrainingArguments(
     load_best_model_at_end=True,
 )
 
+
 # %%
 from transformers import Trainer
 
@@ -121,6 +125,7 @@ trainer = Trainer(
     tokenizer=processor,
 )
 
+
 # %%
 if DO_TRAINING:
     try:
@@ -132,10 +137,12 @@ if DO_TRAINING:
     trainer.save_metrics("train", train_results.metrics)
     trainer.save_state()
 
+
 # %%
 metrics = trainer.evaluate(prepared_ds["test"])
 trainer.log_metrics("eval", metrics)
 trainer.save_metrics("eval", metrics)
+
 
 # %%
 processor = IMAGE_PROCESSOR_CLASS.from_pretrained(OUTPUT_MODEL_DIR)
